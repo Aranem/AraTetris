@@ -14,8 +14,9 @@ android/src/main/jniLibs/
 .idea/
 *.iml
 
-# Claude Code workspace (plans, notes)
-.claude/
+# Claude Code workspace (plans, notes) — ignore all of it except committed skills
+.claude/*
+!.claude/skills/
 
 # OS / misc
 *.log
