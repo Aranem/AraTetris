@@ -38,7 +38,7 @@ class Renderer {
 
     // ------------------------------------------------------------------ in-game
 
-    fun drawGame(state: GameStateView, showTouch: Boolean, botPlaying: Boolean) {
+    fun drawGame(state: GameStateView, showTouch: Boolean, botPlaying: Boolean, swipeMode: Boolean) {
         shape.begin(ShapeRenderer.ShapeType.Filled)
         shape.color = Constants.BOARD_BG
         shape.rect(Constants.BOARD_X, Constants.BOARD_Y, Constants.BOARD_W, Constants.BOARD_H)
@@ -70,9 +70,11 @@ class Renderer {
         state.next.take(5).forEachIndexed { i, t -> miniPiece(t, 396f, 660f - i * 74f, 18f) }
 
         if (showTouch) {
-            TouchControls.gameplay.forEach { b ->
-                shape.color = Constants.BUTTON
-                shape.rect(b.rect.x, b.rect.y, b.rect.width, b.rect.height)
+            if (!swipeMode) {
+                TouchControls.gameplay.forEach { b ->
+                    shape.color = Constants.BUTTON
+                    shape.rect(b.rect.x, b.rect.y, b.rect.width, b.rect.height)
+                }
             }
             shape.color = Constants.BUTTON
             shape.rect(TouchControls.gameHold.x, TouchControls.gameHold.y,
@@ -107,8 +109,13 @@ class Renderer {
         if (botPlaying) text("BOT", 396f, 792f, 1.1f, Constants.ACCENT)
 
         if (showTouch) {
-            TouchControls.gameplay.forEach { b ->
-                centered(b.label, b.rect.x + b.rect.width / 2f, b.rect.y + b.rect.height / 2f, 0.9f, Constants.TEXT)
+            if (!swipeMode) {
+                TouchControls.gameplay.forEach { b ->
+                    centered(b.label, b.rect.x + b.rect.width / 2f, b.rect.y + b.rect.height / 2f, 0.9f, Constants.TEXT)
+                }
+            } else {
+                centered("Swipe to move / soft-drop   flick up = hard drop   tap L/R = rotate",
+                    Constants.VIRTUAL_WIDTH / 2f, 36f, 0.6f, Constants.TEXT_DIM)
             }
             centered("HOLD", center(TouchControls.gameHold).first, center(TouchControls.gameHold).second, 0.8f, Constants.TEXT)
             centered("PAUSE", center(TouchControls.gamePause).first, center(TouchControls.gamePause).second, 0.8f, Constants.TEXT)
@@ -128,22 +135,26 @@ class Renderer {
         panel(TouchControls.menuLevelDown)
         panel(TouchControls.menuLevelUp)
         panel(TouchControls.menuToggle)
+        panel(TouchControls.menuSwipe)
         accentPanel(TouchControls.menuStart)
         panel(TouchControls.menuControls)
         shape.end()
 
         batch.begin()
         centered("ARATETRIS", Constants.VIRTUAL_WIDTH / 2f, 700f, 2.4f, Constants.ACCENT)
-        centered("Best: $best", Constants.VIRTUAL_WIDTH / 2f, 632f, 1f, Constants.TEXT_DIM)
-        centered("START LEVEL", Constants.VIRTUAL_WIDTH / 2f, 548f, 1.1f, Constants.TEXT_DIM)
-        centered("${menu.startLevel}", Constants.VIRTUAL_WIDTH / 2f, 458f, 2f, Constants.TEXT)
+        centered("Best: $best", Constants.VIRTUAL_WIDTH / 2f, 636f, 1f, Constants.TEXT_DIM)
+        centered("START LEVEL", Constants.VIRTUAL_WIDTH / 2f, 562f, 1.1f, Constants.TEXT_DIM)
+        centered("${menu.startLevel}", Constants.VIRTUAL_WIDTH / 2f, 474f, 2f, Constants.TEXT)
         centered("-", center(TouchControls.menuLevelDown).first, center(TouchControls.menuLevelDown).second, 2f, Constants.TEXT)
         centered("+", center(TouchControls.menuLevelUp).first, center(TouchControls.menuLevelUp).second, 2f, Constants.TEXT)
         centered(if (menu.levelProgression) "LEVEL UP: ON" else "LEVEL UP: OFF",
             center(TouchControls.menuToggle).first, center(TouchControls.menuToggle).second, 1f, Constants.TEXT)
+        centered(if (menu.swipeControls) "SWIPE: ON" else "SWIPE: OFF",
+            center(TouchControls.menuSwipe).first, center(TouchControls.menuSwipe).second, 1f, Constants.TEXT)
         centered("START", center(TouchControls.menuStart).first, center(TouchControls.menuStart).second, 1.2f, Constants.TEXT)
         centered("CONTROLS", center(TouchControls.menuControls).first, center(TouchControls.menuControls).second, 1f, Constants.TEXT)
-        centered("Left/Right level   T level-up   Space start   C controls", Constants.VIRTUAL_WIDTH / 2f, 120f, 0.7f, Constants.TEXT_DIM)
+        centered("Left/Right level   T level-up   V swipe   Space start   C controls",
+            Constants.VIRTUAL_WIDTH / 2f, 122f, 0.65f, Constants.TEXT_DIM)
         batch.end()
     }
 
@@ -195,8 +206,9 @@ class Renderer {
             text(keys, 230f, y, 0.95f, Constants.TEXT)
             y -= 40f
         }
-        text("Touch: on-screen buttons (Android)", 60f, y - 6f, 0.85f, Constants.TEXT_DIM)
-        text("Reset high scores: Del, on the game-over screen", 60f, y - 42f, 0.85f, Constants.TEXT_DIM)
+        text("Android: buttons, or swipe mode (toggle on menu) -", 60f, y - 6f, 0.78f, Constants.TEXT_DIM)
+        text("swipe move/soft-drop, flick up hard-drop, tap L/R rotate", 60f, y - 34f, 0.78f, Constants.TEXT_DIM)
+        text("Reset high scores: Del, on the game-over screen", 60f, y - 64f, 0.78f, Constants.TEXT_DIM)
         centered("BACK", center(TouchControls.controlsBack).first, center(TouchControls.controlsBack).second, 1.1f, Constants.TEXT)
         centered("press any key or tap to return", Constants.VIRTUAL_WIDTH / 2f, 40f, 0.7f, Constants.TEXT_DIM)
         batch.end()
