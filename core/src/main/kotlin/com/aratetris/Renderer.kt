@@ -1,9 +1,12 @@
 package com.aratetris
 
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Rectangle
@@ -17,12 +20,43 @@ class Renderer {
     private lateinit var shape: ShapeRenderer
     private lateinit var batch: SpriteBatch
     private lateinit var font: BitmapFont
+    private lateinit var fontTexture: Texture // the binarized glyph atlas (owned here, not by the font)
     private val layout = GlyphLayout()
 
     fun create() {
         shape = ShapeRenderer()
         batch = SpriteBatch()
-        font = BitmapFont().apply { setUseIntegerPositions(false) }
+        font = buildCrispFont()
+    }
+
+    /**
+     * The built-in [BitmapFont] is a ~15px Arial atlas with anti-aliasing baked into the pixels, which
+     * looks grainy once scaled up. Rebuild it from a copy of that atlas whose alpha is forced fully
+     * on/off (no partially-transparent edge pixels) and sampled with nearest filtering, so scaling
+     * never introduces in-between shades. Trade-off: hard, blocky edges instead of soft ones.
+     */
+    private fun buildCrispFont(): BitmapFont {
+        val base = BitmapFont()
+        val tex = base.region.texture
+        if (!tex.textureData.isPrepared) tex.textureData.prepare()
+        val src = tex.textureData.consumePixmap()
+        val bin = Pixmap(src.width, src.height, Pixmap.Format.RGBA8888)
+        bin.blending = Pixmap.Blending.None
+        for (y in 0 until src.height) {
+            for (x in 0 until src.width) {
+                val alpha = src.getPixel(x, y) and 0xFF // getPixel always returns RGBA8888
+                bin.drawPixel(x, y, if (alpha >= ALPHA_CUTOFF) -1 else 0) // -1 = opaque white, 0 = clear
+            }
+        }
+        fontTexture = Texture(bin).apply { setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest) }
+        src.dispose()
+        bin.dispose()
+        base.region.texture.dispose() // original soft atlas no longer needed; glyph metrics are reused
+        val crisp = BitmapFont(base.data, TextureRegion(fontTexture), false)
+        crisp.setUseIntegerPositions(false)
+        // Widen each glyph's advance so the blocky letters don't visually run into each other.
+        crisp.data.glyphs.forEach { row -> row?.forEach { g -> if (g != null) g.xadvance += LETTER_SPACING } }
+        return crisp
     }
 
     fun setProjection(m: Matrix4) {
@@ -34,11 +68,12 @@ class Renderer {
         shape.dispose()
         batch.dispose()
         font.dispose()
+        fontTexture.dispose() // font was built from a passed-in region, so it doesn't own this
     }
 
     // ------------------------------------------------------------------ in-game
 
-    fun drawGame(state: GameStateView, showTouch: Boolean, botPlaying: Boolean, swipeMode: Boolean) {
+    fun drawGame(state: GameStateView, showTouch: Boolean, botPlaying: Boolean, swipeMode: Boolean, flash: String? = null) {
         shape.begin(ShapeRenderer.ShapeType.Filled)
         shape.color = Constants.BOARD_BG
         shape.rect(Constants.BOARD_X, Constants.BOARD_Y, Constants.BOARD_W, Constants.BOARD_H)
@@ -102,7 +137,7 @@ class Renderer {
         text("SCORE ${state.score}", 12f, 792f, 1.1f, Constants.TEXT)
         text("LV ${state.level}", 12f, 600f, 1f, Constants.TEXT)
         text("LINES ${state.lines}", 12f, 572f, 1f, Constants.TEXT)
-        if (state.backToBack) text("B2B", 12f, 544f, 1f, Constants.ACCENT)
+        flash?.let { text(it, 12f, 544f, 1f, Constants.ACCENT) } // transient TETRIS / B2B banner
         if (state.combo > 0) text("COMBO ${state.combo}", 12f, 516f, 1f, Constants.ACCENT)
         text("HOLD", 12f, 712f, 1f, Constants.TEXT_DIM)
         text("NEXT", 396f, 712f, 1f, Constants.TEXT_DIM)
@@ -223,6 +258,7 @@ class Renderer {
         shape.rect(0f, 0f, Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
         if (!confirming) {
             accentPanel(TouchControls.gameOverRestart)
+            panel(TouchControls.gameOverMenu)
             panel(TouchControls.gameOverReset)
         } else {
             panel(TouchControls.confirmYes)
@@ -246,8 +282,9 @@ class Renderer {
 
         if (!confirming) {
             centered("RESTART", center(TouchControls.gameOverRestart).first, center(TouchControls.gameOverRestart).second, 1.2f, Constants.TEXT)
+            centered("MAIN MENU", center(TouchControls.gameOverMenu).first, center(TouchControls.gameOverMenu).second, 1.1f, Constants.TEXT)
             centered("RESET SCORES", center(TouchControls.gameOverReset).first, center(TouchControls.gameOverReset).second, 0.95f, Constants.TEXT)
-            centered("Space/R restart   Del reset", Constants.VIRTUAL_WIDTH / 2f, 130f, 0.75f, Constants.TEXT_DIM)
+            centered("Space/R restart   M menu   Del reset", Constants.VIRTUAL_WIDTH / 2f, 130f, 0.75f, Constants.TEXT_DIM)
         } else {
             centered("Reset all scores?", Constants.VIRTUAL_WIDTH / 2f, 420f, 1.3f, Constants.TEXT)
             centered("YES", center(TouchControls.confirmYes).first, center(TouchControls.confirmYes).second, 1.2f, Constants.TEXT)
@@ -300,5 +337,14 @@ class Renderer {
         layout.setText(font, s)
         font.draw(batch, layout, cx - layout.width / 2f, cy + layout.height / 2f)
         font.data.setScale(1f)
+    }
+
+    private companion object {
+        // Glyph pixels at least this opaque become solid; the rest become fully transparent.
+        // Higher = thinner strokes (more edge pixels dropped); much above 0x80 erodes thin strokes
+        // (e.g. drops a '+' arm), so keep it near 50%.
+        const val ALPHA_CUTOFF = 0x80
+        // Extra horizontal advance added to every glyph, in unscaled font units (scales with text).
+        const val LETTER_SPACING = 1
     }
 }

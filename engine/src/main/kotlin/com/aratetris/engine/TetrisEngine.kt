@@ -34,6 +34,7 @@ class TetrisEngine(val config: GameConfig = GameConfig(), autoStart: Boolean = t
     private var levelValue = config.startLevel
     private var combo = -1
     private var b2bActive = false
+    private var b2bChain = 0 // consecutive difficult clears; >=2 means the Back-to-Back bonus is active
     private var gameOver = false
     private var paused = false
 
@@ -67,6 +68,7 @@ class TetrisEngine(val config: GameConfig = GameConfig(), autoStart: Boolean = t
         levelValue = config.startLevel
         combo = -1
         b2bActive = false
+        b2bChain = 0
         gameOver = false
         paused = false
         gravityAccum = 0.0
@@ -250,6 +252,7 @@ class TetrisEngine(val config: GameConfig = GameConfig(), autoStart: Boolean = t
         e.levelValue = levelValue
         e.combo = combo
         e.b2bActive = b2bActive
+        e.b2bChain = b2bChain
         e.gameOver = gameOver
         e.paused = paused
         e.lastRotation = lastRotation
@@ -288,6 +291,7 @@ class TetrisEngine(val config: GameConfig = GameConfig(), autoStart: Boolean = t
                 lines = linesValue,
                 combo = combo,
                 backToBack = b2bActive,
+                backToBackStreak = b2bChain,
                 gameOver = gameOver,
                 paused = paused,
             )
@@ -398,12 +402,15 @@ class TetrisEngine(val config: GameConfig = GameConfig(), autoStart: Boolean = t
         if (cleared > 0 && difficult && b2bActive) points = points * 3 / 2 // Back-to-Back x1.5
 
         if (cleared > 0) {
+            // Track the streak before flipping the flag: a difficult clear extends it (or starts it
+            // at 1 when none was primed); any normal clear breaks it.
+            b2bChain = if (difficult) (if (b2bActive) b2bChain + 1 else 1) else 0
             b2bActive = difficult
             combo += 1
             points += 50 * combo * lvl
         } else {
             combo = -1
-            // A spin that clears no lines does not break Back-to-Back: leave b2bActive unchanged.
+            // A spin that clears no lines does not break Back-to-Back: leave b2bActive/b2bChain unchanged.
         }
         if (perfectClear && config.perfectClearBonus) points += Scoring.perfectClearPoints(cleared) * lvl
         return points

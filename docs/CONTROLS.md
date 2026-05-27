@@ -18,7 +18,8 @@
 
 **Pause menu** (`P` / `Esc` while playing): Resume (`P`/`Esc`), Restart (`R`), Main Menu (`M`).
 
-**Game over:** `Space` / `R` restart; `Del` opens the "reset high scores" confirmation.
+**Game over:** `Space` / `R` restart; `M` returns to the main menu; `Del` opens the "reset high
+scores" confirmation. (On touch: RESTART / MAIN MENU / RESET SCORES buttons.)
 
 ## Android (touch)
 
