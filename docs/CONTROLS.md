@@ -30,11 +30,18 @@ remembered across launches).
 | Action | Gesture |
 |--------|---------|
 | Move left / right | Swipe left / right anywhere (one cell per finger-width, so longer swipes move further) |
-| Soft drop | Swipe down |
+| Soft drop | Swipe down, then hold — it keeps soft-dropping while your finger stays down; slide left/right to steer the piece as it falls |
 | Hard drop | Flick up |
 | Rotate left / right | Tap the left / right half of the screen |
 | Hold | Tap the **HOLD** button (left) |
 | Pause | Tap the **PAUSE** button (right) |
+
+Each swipe commits to one axis as soon as it gets going, so a sideways move can't turn into a hard
+drop and vice-versa — an upward flick doesn't have to be perfectly straight. The exception is soft
+drop: while you hold a soft drop you can still slide left/right to steer (hard drop stays disabled
+for that gesture). After a hard drop you must lift your finger before another gesture registers, so
+a lingering touch won't act on the next piece. (This applies to swipe mode only; button mode and the
+keyboard are unaffected.)
 
 ### Button mode
 
