@@ -24,7 +24,8 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
     private lateinit var viewport: FitViewport
     private lateinit var renderer: Renderer
     private lateinit var highScores: HighScores
-    private val menu = StartMenu()
+    private lateinit var menu: StartMenu
+    private val gestures = GestureControls()
 
     private enum class Screen { MENU, CONTROLS, PLAYING, GAME_OVER }
     private var screen = Screen.MENU
@@ -48,6 +49,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
         renderer = Renderer().also { it.create() }
         highScores = HighScores()
+        menu = StartMenu()
     }
 
     override fun resize(width: Int, height: Int) {
@@ -75,6 +77,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         if (kbJust(Keys.LEFT) || kbJust(Keys.A)) menu.levelDown()
         if (kbJust(Keys.RIGHT) || kbJust(Keys.D)) menu.levelUp()
         if (kbJust(Keys.T)) menu.toggleProgression()
+        if (kbJust(Keys.V)) menu.toggleSwipe()
         if (kbJust(Keys.SPACE) || kbJust(Keys.ENTER)) startGame()
         if (kbJust(Keys.C)) screen = Screen.CONTROLS
 
@@ -83,6 +86,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
                 hit(TouchControls.menuLevelDown, v) -> menu.levelDown()
                 hit(TouchControls.menuLevelUp, v) -> menu.levelUp()
                 hit(TouchControls.menuToggle, v) -> menu.toggleProgression()
+                hit(TouchControls.menuSwipe, v) -> menu.toggleSwipe()
                 hit(TouchControls.menuStart, v) -> startGame()
                 hit(TouchControls.menuControls, v) -> screen = Screen.CONTROLS
             }
@@ -99,9 +103,10 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         val e = engine ?: return
 
         if (e.isPaused) {
+            gestures.reset() // discard any in-progress gesture so resuming doesn't fire a stray move
             handlePauseMenu(e)
             if (screen != Screen.PLAYING || engine !== e) return // left to menu / restarted
-            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying, swipeMode = touchUi && menu.swipeControls)
             renderer.drawPauseMenu()
             return
         }
@@ -109,7 +114,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         handlePlayingInput(dt)
         if (engine !== e) return // a restart replaced the engine this frame
         if (e.isPaused) { // just paused this frame
-            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying, swipeMode = touchUi && menu.swipeControls)
             renderer.drawPauseMenu()
             return
         }
@@ -122,7 +127,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             }
             screen = Screen.GAME_OVER
         }
-        renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+        renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying, swipeMode = touchUi && menu.swipeControls)
     }
 
     private fun handlePauseMenu(e: TetrisEngine) {
@@ -193,6 +198,10 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         var hold = kbJust(Keys.C) || kbJust(Keys.SHIFT_LEFT)
 
         if (touchUi) {
+            if (menu.swipeControls) {
+                applySwipeInput(e, dt)
+                return
+            }
             val held = heldTouchActions()
             if (Action.LEFT in held) dir -= 1
             if (Action.RIGHT in held) dir += 1
@@ -214,6 +223,27 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         if (rotCCW) e.applyAction(Action.ROTATE_CCW)
         if (hard) e.applyAction(Action.HARD_DROP)
         if (hold) e.applyAction(Action.HOLD)
+    }
+
+    private fun applySwipeInput(e: TetrisEngine, dt: Float) {
+        val touched = Gdx.input.isTouched(0)
+        val v = if (touched)
+            viewport.unproject(tmpTouch.set(Gdx.input.getX(0).toFloat(), Gdx.input.getY(0).toFloat()))
+        else tmpTouch
+        val g = gestures.update(
+            touched, v.x, v.y, dt, Constants.VIRTUAL_WIDTH / 2f,
+            TouchControls.gameHold, TouchControls.gamePause,
+        )
+        if (g.pause) { e.applyAction(Action.PAUSE); return }
+        if (g.moveSteps != 0) {
+            val a = if (g.moveSteps < 0) Action.LEFT else Action.RIGHT
+            repeat(kotlin.math.abs(g.moveSteps)) { e.applyAction(a) }
+        }
+        repeat(g.softSteps) { e.applyAction(Action.SOFT_DROP) }
+        if (g.hardDrop) e.applyAction(Action.HARD_DROP)
+        if (g.rotateCW) e.applyAction(Action.ROTATE_CW)
+        if (g.rotateCCW) e.applyAction(Action.ROTATE_CCW)
+        if (g.hold) e.applyAction(Action.HOLD)
     }
 
     private fun horizontalRepeat(dir: Int, dt: Float) {
@@ -276,6 +306,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         lastRank = null
         moveDir = 0
         softActive = false
+        gestures.reset()
     }
 
     private val touchUi: Boolean get() = Gdx.app.type == Application.ApplicationType.Android
