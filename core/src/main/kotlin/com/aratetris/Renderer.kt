@@ -74,6 +74,11 @@ class Renderer {
                 shape.color = Constants.BUTTON
                 shape.rect(b.rect.x, b.rect.y, b.rect.width, b.rect.height)
             }
+            shape.color = Constants.BUTTON
+            shape.rect(TouchControls.gameHold.x, TouchControls.gameHold.y,
+                TouchControls.gameHold.width, TouchControls.gameHold.height)
+            shape.rect(TouchControls.gamePause.x, TouchControls.gamePause.y,
+                TouchControls.gamePause.width, TouchControls.gamePause.height)
         }
         shape.end()
 
@@ -105,6 +110,8 @@ class Renderer {
             TouchControls.gameplay.forEach { b ->
                 centered(b.label, b.rect.x + b.rect.width / 2f, b.rect.y + b.rect.height / 2f, 0.9f, Constants.TEXT)
             }
+            centered("HOLD", center(TouchControls.gameHold).first, center(TouchControls.gameHold).second, 0.8f, Constants.TEXT)
+            centered("PAUSE", center(TouchControls.gamePause).first, center(TouchControls.gamePause).second, 0.8f, Constants.TEXT)
         } else {
             text("A/D move   Left/Right rotate   Up drop   Down soft   C hold   P pause   B bot   R restart",
                 10f, 36f, 0.62f, Constants.TEXT_DIM)
