@@ -32,7 +32,10 @@ data class GameStateView(
     val level: Int,
     val lines: Int,
     val combo: Int,
+    /** True once a difficult clear (Tetris / T-spin-with-lines) has primed Back-to-Back. */
     val backToBack: Boolean,
+    /** Consecutive difficult clears: 0 none, 1 primed, >=2 means the x1.5 bonus is being earned. */
+    val backToBackStreak: Int,
     val gameOver: Boolean,
     val paused: Boolean,
 ) {

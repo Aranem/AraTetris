@@ -26,9 +26,9 @@ object TouchControls {
         return TouchButton(action, Rectangle(x, y, 152f, 66f), label, repeat)
     }
 
-    // Hold button on the left column; pause button on the right column (touch play only).
+    // Hold button on the left column; pause button at the top-right corner (touch play only).
     val gameHold = Rectangle(6f, 300f, 76f, 46f)
-    val gamePause = Rectangle(398f, 240f, 76f, 46f)
+    val gamePause = Rectangle(398f, 746f, 76f, 46f)
 
     // Menu screen.
     val menuLevelDown = Rectangle(110f, 446f, 56f, 56f)
@@ -47,7 +47,8 @@ object TouchControls {
     val pauseMainMenu = Rectangle(140f, 280f, 200f, 56f)
 
     // Game-over screen.
-    val gameOverRestart = Rectangle(140f, 250f, 200f, 58f)
+    val gameOverRestart = Rectangle(140f, 320f, 200f, 58f)
+    val gameOverMenu = Rectangle(140f, 245f, 200f, 58f)
     val gameOverReset = Rectangle(140f, 175f, 200f, 52f)
 
     // Reset confirmation prompt.

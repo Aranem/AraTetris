@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.aratetris.engine.Action
+import com.aratetris.engine.GameStateView
 import com.aratetris.engine.TetrisEngine
 import com.aratetris.engine.agent.RandomAgent
 import com.aratetris.engine.agent.TetrisAgent
@@ -42,6 +43,11 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
     private var moveDelay = 0f
     private var softActive = false
     private var softDelay = 0f
+
+    // Transient on-screen banner (e.g. TETRIS), driven by the per-frame change in cleared lines.
+    private var prevLines = 0
+    private var flashText: String? = null
+    private var flashTimer = 0f
 
     private val tmpTouch = Vector2()
 
@@ -127,7 +133,33 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             }
             screen = Screen.GAME_OVER
         }
-        renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying, swipeMode = touchUi && menu.swipeControls)
+        val view = e.state
+        updateFlash(view, dt)
+        renderer.drawGame(view, showTouch = touchUi, botPlaying = botPlaying,
+            swipeMode = touchUi && menu.swipeControls, flash = flashText)
+    }
+
+    /**
+     * Briefly flash a banner when a clear lands: "B2B" if it's a back-to-back (the bonus is being
+     * earned), otherwise "TETRIS" for a four-line clear. Both auto-dismiss after [FLASH_TIME].
+     */
+    private fun updateFlash(view: GameStateView, dt: Float) {
+        val cleared = view.lines - prevLines
+        prevLines = view.lines
+        val banner = if (cleared > 0) {
+            when {
+                view.backToBackStreak >= 2 -> "B2B"
+                cleared >= 4 -> "TETRIS"
+                else -> null
+            }
+        } else null
+        if (banner != null) {
+            flashText = banner
+            flashTimer = FLASH_TIME
+        } else if (flashTimer > 0f) {
+            flashTimer -= dt
+            if (flashTimer <= 0f) flashText = null
+        }
     }
 
     private fun handlePauseMenu(e: TetrisEngine) {
@@ -156,10 +188,12 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             }
         } else {
             if (kbJust(Keys.SPACE) || kbJust(Keys.R) || kbJust(Keys.ENTER)) { startGame(); return }
+            if (kbJust(Keys.M)) { screen = Screen.MENU; return }
             if (kbJust(Keys.FORWARD_DEL) || kbJust(Keys.DEL)) confirmingReset = true
             tap()?.let { v ->
                 when {
                     hit(TouchControls.gameOverRestart, v) -> { startGame(); return }
+                    hit(TouchControls.gameOverMenu, v) -> { screen = Screen.MENU; return }
                     hit(TouchControls.gameOverReset, v) -> confirmingReset = true
                 }
             }
@@ -307,6 +341,9 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         moveDir = 0
         softActive = false
         gestures.reset()
+        prevLines = 0
+        flashText = null
+        flashTimer = 0f
     }
 
     private val touchUi: Boolean get() = Gdx.app.type == Application.ApplicationType.Android
@@ -331,5 +368,6 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         private const val ARR = 0.04f       // auto-repeat rate for horizontal movement
         private const val SOFT_ARR = 0.03f  // soft-drop repeat rate
         private const val BOT_INTERVAL = 0.06f // throttle so a watching human can follow the bot
+        private const val FLASH_TIME = 1.2f     // seconds the TETRIS / B2B banner stays on screen
     }
 }
