@@ -13,7 +13,26 @@ no network, accounts, ads, or telemetry.
 - **Android builds only:** the **Android SDK** (installed with Android Studio).
 - No Gradle install needed — the included `gradlew` wrapper handles it.
 
-> Commands below use Windows PowerShell (`.\gradlew.bat`). On macOS/Linux use `./gradlew`.
+> Commands below use Windows PowerShell. If scripts are blocked, run them as
+> `powershell -ExecutionPolicy Bypass -File .\build.ps1`.
+
+## Quick start (helper scripts)
+
+Three PowerShell scripts wrap the build into a single step each, selecting a suitable JDK
+automatically:
+
+```powershell
+.\build.ps1            # build everything: the Windows jar AND the Android APK
+.\run-desktop.ps1      # build (if needed) and play on Windows
+.\deploy-android.ps1   # build, install on a USB-connected phone, and launch it
+```
+
+Useful flags: `.\build.ps1 desktop` / `.\build.ps1 android` build just one target;
+`.\deploy-android.ps1 -NoBuild` installs the existing APK without rebuilding. `deploy-android.ps1`
+needs **USB debugging** enabled on the phone (accept the on-screen prompt), and retries once if the
+USB link drops mid-install.
+
+The rest of this section shows the underlying Gradle commands if you prefer them.
 
 ## Build & run on Windows
 
@@ -23,11 +42,11 @@ Run from source:
 .\gradlew.bat lwjgl3:run
 ```
 
-Or build a standalone, double-clickable jar:
+Or build a standalone jar:
 
 ```powershell
 .\gradlew.bat lwjgl3:dist
-java -jar lwjgl3\build\libs\AraTetris.jar
+# -> lwjgl3\build\libs\AraTetris.jar   (run with .\run-desktop.ps1, or java -jar using a JDK 17+)
 ```
 
 ## Build & run on Android

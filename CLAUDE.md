@@ -5,9 +5,9 @@ Kotlin/libGDX, built **engine-first** so an algorithm can play it. See `docs/` f
 
 ## Build & run (IMPORTANT: JDK)
 
-The default `java` on PATH here is **JDK 8**, which is too old for the build. The Gradle daemon is
-pinned to **Android Studio's JBR (JDK 21)** via `org.gradle.java.home` in `gradle.properties`. Always
-run the wrapper with that JDK as `JAVA_HOME` too, e.g. in PowerShell:
+The build needs **JDK 17+**. The Gradle daemon is pinned to **Android Studio's JBR (JDK 21)** via
+`org.gradle.java.home` in `gradle.properties`. If the `java` on PATH is older than 17, also run the
+wrapper with a JDK 17+ as `JAVA_HOME`, e.g. in PowerShell:
 
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"

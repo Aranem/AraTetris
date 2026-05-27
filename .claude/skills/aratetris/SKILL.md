@@ -12,10 +12,10 @@ Strictly offline. End goal of the project: write an algorithm that plays the gam
 
 ## Environment & toolchain
 
-- The default `java` on PATH is **JDK 8** — too old to build. Use **Android Studio's JBR (JDK 21)**.
-  The Gradle daemon is already pinned to it in `gradle.properties`
-  (`org.gradle.java.home=C:\Program Files\Android\Android Studio\jbr`). Also export it when invoking
-  the wrapper: `$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"`.
+- The build needs **JDK 17+**. The Gradle daemon is already pinned to **Android Studio's JBR (JDK 21)**
+  in `gradle.properties` (`org.gradle.java.home=C:\Program Files\Android\Android Studio\jbr`). If the
+  `java` on PATH is older than 17, also export a JDK 17+ when invoking the wrapper:
+  `$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"`.
 - Android SDK at `%LOCALAPPDATA%\Android\Sdk` (platform 36, build-tools 36/37, license accepted).
   `local.properties` holds `sdk.dir` and is git-ignored.
 - `gradle`/`kotlin` are NOT on PATH — use the `gradlew` wrapper (already committed).
