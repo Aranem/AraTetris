@@ -1,0 +1,229 @@
+package com.aratetris
+
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.Matrix4
+import com.badlogic.gdx.math.Rectangle
+import com.aratetris.engine.GameStateView
+import com.aratetris.engine.PieceType
+import com.aratetris.engine.Shapes
+
+/** Draws everything with a [ShapeRenderer] (blocks/panels) and the built-in [BitmapFont] (text). */
+class Renderer {
+
+    private lateinit var shape: ShapeRenderer
+    private lateinit var batch: SpriteBatch
+    private lateinit var font: BitmapFont
+    private val layout = GlyphLayout()
+
+    fun create() {
+        shape = ShapeRenderer()
+        batch = SpriteBatch()
+        font = BitmapFont().apply { setUseIntegerPositions(false) }
+    }
+
+    fun setProjection(m: Matrix4) {
+        shape.projectionMatrix = m
+        batch.projectionMatrix = m
+    }
+
+    fun dispose() {
+        shape.dispose()
+        batch.dispose()
+        font.dispose()
+    }
+
+    // ------------------------------------------------------------------ in-game
+
+    fun drawGame(state: GameStateView, showTouch: Boolean, botPlaying: Boolean) {
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.color = Constants.BOARD_BG
+        shape.rect(Constants.BOARD_X, Constants.BOARD_Y, Constants.BOARD_W, Constants.BOARD_H)
+
+        // Locked cells.
+        for (y in 0 until Constants.BOARD_ROWS) {
+            for (x in 0 until Constants.BOARD_COLS) {
+                val id = state.cellAt(x, y)
+                if (id != 0) cell(x, y, Constants.colorForId(id))
+            }
+        }
+        // Ghost (landing preview).
+        state.ghost?.cells?.forEach { c ->
+            if (c.y in 0 until Constants.BOARD_ROWS) {
+                val sx = Constants.BOARD_X + c.x * Constants.CELL
+                val sy = Constants.BOARD_Y + c.y * Constants.CELL
+                shape.color = Constants.GHOST
+                shape.rect(sx + 2f, sy + 2f, Constants.CELL - 4f, Constants.CELL - 4f)
+            }
+        }
+        // Active piece.
+        state.active?.let { p ->
+            val color = Constants.colorFor(p.type)
+            p.cells.forEach { c -> if (c.y in 0 until Constants.BOARD_ROWS) cell(c.x, c.y, color) }
+        }
+
+        // Side panels.
+        state.hold?.let { miniPiece(it, 12f, 660f, 18f) }
+        state.next.take(5).forEachIndexed { i, t -> miniPiece(t, 396f, 660f - i * 74f, 18f) }
+
+        if (showTouch) {
+            TouchControls.gameplay.forEach { b ->
+                shape.color = Constants.BUTTON
+                shape.rect(b.rect.x, b.rect.y, b.rect.width, b.rect.height)
+            }
+        }
+        shape.end()
+
+        // Grid lines.
+        shape.begin(ShapeRenderer.ShapeType.Line)
+        shape.color = Constants.GRID_LINE
+        for (x in 0..Constants.BOARD_COLS) {
+            val sx = Constants.BOARD_X + x * Constants.CELL
+            shape.line(sx, Constants.BOARD_Y, sx, Constants.BOARD_Y + Constants.BOARD_H)
+        }
+        for (y in 0..Constants.BOARD_ROWS) {
+            val sy = Constants.BOARD_Y + y * Constants.CELL
+            shape.line(Constants.BOARD_X, sy, Constants.BOARD_X + Constants.BOARD_W, sy)
+        }
+        shape.end()
+
+        // Text.
+        batch.begin()
+        text("SCORE ${state.score}", 12f, 792f, 1.1f, Constants.TEXT)
+        text("LV ${state.level}", 12f, 600f, 1f, Constants.TEXT)
+        text("LINES ${state.lines}", 12f, 572f, 1f, Constants.TEXT)
+        if (state.backToBack) text("B2B", 12f, 544f, 1f, Constants.ACCENT)
+        if (state.combo > 0) text("COMBO ${state.combo}", 12f, 516f, 1f, Constants.ACCENT)
+        text("HOLD", 12f, 712f, 1f, Constants.TEXT_DIM)
+        text("NEXT", 396f, 712f, 1f, Constants.TEXT_DIM)
+        if (botPlaying) text("BOT", 396f, 792f, 1.1f, Constants.ACCENT)
+        if (state.paused) centered("PAUSED", Constants.VIRTUAL_WIDTH / 2f, 450f, 2f, Constants.TEXT)
+
+        if (showTouch) {
+            TouchControls.gameplay.forEach { b ->
+                centered(b.label, b.rect.x + b.rect.width / 2f, b.rect.y + b.rect.height / 2f, 0.9f, Constants.TEXT)
+            }
+        } else {
+            text("Arrows move  Z/Up rotate  Space drop  C hold  P pause  B bot  R restart",
+                10f, 36f, 0.7f, Constants.TEXT_DIM)
+        }
+        batch.end()
+    }
+
+    // ------------------------------------------------------------------ menu
+
+    fun drawMenu(menu: StartMenu, best: Int) {
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.color = Constants.BACKGROUND
+        shape.rect(0f, 0f, Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
+        panel(TouchControls.menuLevelDown)
+        panel(TouchControls.menuLevelUp)
+        panel(TouchControls.menuToggle)
+        accentPanel(TouchControls.menuStart)
+        shape.end()
+
+        batch.begin()
+        centered("ARATETRIS", Constants.VIRTUAL_WIDTH / 2f, 700f, 2.4f, Constants.ACCENT)
+        centered("START LEVEL", Constants.VIRTUAL_WIDTH / 2f, 540f, 1.1f, Constants.TEXT_DIM)
+        centered("${menu.startLevel}", Constants.VIRTUAL_WIDTH / 2f, 458f, 2f, Constants.TEXT)
+        centered("-", center(TouchControls.menuLevelDown).first, center(TouchControls.menuLevelDown).second, 2f, Constants.TEXT)
+        centered("+", center(TouchControls.menuLevelUp).first, center(TouchControls.menuLevelUp).second, 2f, Constants.TEXT)
+        centered(if (menu.levelProgression) "LEVEL UP: ON" else "LEVEL UP: OFF",
+            center(TouchControls.menuToggle).first, center(TouchControls.menuToggle).second, 1f, Constants.TEXT)
+        centered("START", center(TouchControls.menuStart).first, center(TouchControls.menuStart).second, 1.2f, Constants.TEXT)
+        centered("Best: $best", Constants.VIRTUAL_WIDTH / 2f, 170f, 1f, Constants.TEXT_DIM)
+        centered("Tap buttons, or use Left/Right, T, Space", Constants.VIRTUAL_WIDTH / 2f, 120f, 0.75f, Constants.TEXT_DIM)
+        batch.end()
+    }
+
+    // ------------------------------------------------------------------ game over
+
+    fun drawGameOver(state: GameStateView, scores: List<Int>, lastRank: Int?, confirming: Boolean) {
+        // Dim the field that is already drawn behind this overlay.
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.color = Constants.OVERLAY
+        shape.rect(0f, 0f, Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
+        if (!confirming) {
+            accentPanel(TouchControls.gameOverRestart)
+            panel(TouchControls.gameOverReset)
+        } else {
+            panel(TouchControls.confirmYes)
+            panel(TouchControls.confirmNo)
+        }
+        shape.end()
+
+        batch.begin()
+        centered("GAME OVER", Constants.VIRTUAL_WIDTH / 2f, 720f, 2f, Constants.TEXT)
+        centered("Score ${state.score}", Constants.VIRTUAL_WIDTH / 2f, 660f, 1.2f, Constants.ACCENT)
+        if (lastRank != null) centered("New high score! #$lastRank", Constants.VIRTUAL_WIDTH / 2f, 628f, 1f, Constants.ACCENT)
+
+        centered("HIGH SCORES", Constants.VIRTUAL_WIDTH / 2f, 580f, 1.1f, Constants.TEXT_DIM)
+        if (scores.isEmpty()) {
+            centered("- none yet -", Constants.VIRTUAL_WIDTH / 2f, 540f, 1f, Constants.TEXT_DIM)
+        } else {
+            scores.forEachIndexed { i, s ->
+                centered("${i + 1}.  $s", Constants.VIRTUAL_WIDTH / 2f, 545f - i * 28f, 1f, Constants.TEXT)
+            }
+        }
+
+        if (!confirming) {
+            centered("RESTART", center(TouchControls.gameOverRestart).first, center(TouchControls.gameOverRestart).second, 1.2f, Constants.TEXT)
+            centered("RESET SCORES", center(TouchControls.gameOverReset).first, center(TouchControls.gameOverReset).second, 0.95f, Constants.TEXT)
+            centered("Space/R restart   Del reset", Constants.VIRTUAL_WIDTH / 2f, 130f, 0.75f, Constants.TEXT_DIM)
+        } else {
+            centered("Reset all scores?", Constants.VIRTUAL_WIDTH / 2f, 420f, 1.3f, Constants.TEXT)
+            centered("YES", center(TouchControls.confirmYes).first, center(TouchControls.confirmYes).second, 1.2f, Constants.TEXT)
+            centered("NO", center(TouchControls.confirmNo).first, center(TouchControls.confirmNo).second, 1.2f, Constants.TEXT)
+        }
+        batch.end()
+    }
+
+    // ------------------------------------------------------------------ helpers
+
+    private fun cell(x: Int, y: Int, color: Color) {
+        val sx = Constants.BOARD_X + x * Constants.CELL
+        val sy = Constants.BOARD_Y + y * Constants.CELL
+        shape.color = color
+        shape.rect(sx + 1f, sy + 1f, Constants.CELL - 2f, Constants.CELL - 2f)
+    }
+
+    private fun miniPiece(type: PieceType, originX: Float, originY: Float, size: Float) {
+        val cells = Shapes.cells(type, 0)
+        val minX = cells.minOf { it.first }
+        val minY = cells.minOf { it.second }
+        shape.color = Constants.colorFor(type)
+        cells.forEach { (cx, cy) ->
+            shape.rect(originX + (cx - minX) * size + 1f, originY + (cy - minY) * size + 1f, size - 2f, size - 2f)
+        }
+    }
+
+    private fun panel(r: Rectangle) {
+        shape.color = Constants.BUTTON
+        shape.rect(r.x, r.y, r.width, r.height)
+    }
+
+    private fun accentPanel(r: Rectangle) {
+        shape.color = Constants.BUTTON_DOWN
+        shape.rect(r.x, r.y, r.width, r.height)
+    }
+
+    private fun center(r: Rectangle): Pair<Float, Float> = (r.x + r.width / 2f) to (r.y + r.height / 2f)
+
+    private fun text(s: String, x: Float, y: Float, scale: Float, color: Color) {
+        font.data.setScale(scale)
+        font.color = color
+        font.draw(batch, s, x, y)
+        font.data.setScale(1f)
+    }
+
+    private fun centered(s: String, cx: Float, cy: Float, scale: Float, color: Color) {
+        font.data.setScale(scale)
+        font.color = color
+        layout.setText(font, s)
+        font.draw(batch, layout, cx - layout.width / 2f, cy + layout.height / 2f)
+        font.data.setScale(1f)
+    }
+}

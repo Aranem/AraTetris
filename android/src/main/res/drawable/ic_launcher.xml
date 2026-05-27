@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple vector launcher icon: a few tetromino blocks on a dark board. No binary asset needed. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path android:fillColor="#101522" android:pathData="M0,0 h108 v108 h-108 z" />
+
+    <!-- T piece (purple) -->
+    <path android:fillColor="#A646C8" android:pathData="M30,30 h48 v16 h-48 z" />
+    <path android:fillColor="#A646C8" android:pathData="M46,46 h16 v16 h-16 z" />
+
+    <!-- bottom row blocks -->
+    <path android:fillColor="#46C8B4" android:pathData="M30,62 h16 v16 h-16 z" />
+    <path android:fillColor="#E0B341" android:pathData="M46,62 h16 v16 h-16 z" />
+    <path android:fillColor="#E05A5A" android:pathData="M62,62 h16 v16 h-16 z" />
+</vector>

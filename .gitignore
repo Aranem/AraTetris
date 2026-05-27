@@ -1,0 +1,22 @@
+# Gradle / build outputs
+.gradle/
+build/
+**/build/
+out/
+
+# Local machine config (Android SDK path etc.)
+local.properties
+
+# Generated Android native libraries (copied from gdx-platform at build time)
+android/src/main/jniLibs/
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+
+# Claude Code workspace (plans, notes)
+.claude/
+
+# OS / misc
+*.log
+.DS_Store

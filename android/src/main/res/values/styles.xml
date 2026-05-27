@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Built-in fullscreen, no title bar; AndroidApplication extends a plain Activity. -->
+    <style name="GdxTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+</resources>
