@@ -239,7 +239,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             val a = if (g.moveSteps < 0) Action.LEFT else Action.RIGHT
             repeat(kotlin.math.abs(g.moveSteps)) { e.applyAction(a) }
         }
-        repeat(g.softSteps) { e.applyAction(Action.SOFT_DROP) }
+        softRepeat(g.softHeld, dt) // swipe down latches soft drop on; auto-repeats while finger held
         if (g.hardDrop) e.applyAction(Action.HARD_DROP)
         if (g.rotateCW) e.applyAction(Action.ROTATE_CW)
         if (g.rotateCCW) e.applyAction(Action.ROTATE_CCW)
