@@ -26,7 +26,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
     private lateinit var highScores: HighScores
     private val menu = StartMenu()
 
-    private enum class Screen { MENU, PLAYING, GAME_OVER }
+    private enum class Screen { MENU, CONTROLS, PLAYING, GAME_OVER }
     private var screen = Screen.MENU
 
     private var engine: TetrisEngine? = null
@@ -63,6 +63,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
 
         when (screen) {
             Screen.MENU -> renderMenu()
+            Screen.CONTROLS -> renderControls()
             Screen.PLAYING -> renderPlaying(dt)
             Screen.GAME_OVER -> renderGameOver()
         }
@@ -75,6 +76,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         if (kbJust(Keys.RIGHT) || kbJust(Keys.D)) menu.levelUp()
         if (kbJust(Keys.T)) menu.toggleProgression()
         if (kbJust(Keys.SPACE) || kbJust(Keys.ENTER)) startGame()
+        if (kbJust(Keys.C)) screen = Screen.CONTROLS
 
         tap()?.let { v ->
             when {
@@ -82,14 +84,36 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
                 hit(TouchControls.menuLevelUp, v) -> menu.levelUp()
                 hit(TouchControls.menuToggle, v) -> menu.toggleProgression()
                 hit(TouchControls.menuStart, v) -> startGame()
+                hit(TouchControls.menuControls, v) -> screen = Screen.CONTROLS
             }
         }
         renderer.drawMenu(menu, highScores.best())
     }
 
+    private fun renderControls() {
+        if (Gdx.input.justTouched() || kbJust(Keys.ANY_KEY)) screen = Screen.MENU
+        renderer.drawControls()
+    }
+
     private fun renderPlaying(dt: Float) {
         val e = engine ?: return
+
+        if (e.isPaused) {
+            handlePauseMenu(e)
+            if (screen != Screen.PLAYING || engine !== e) return // left to menu / restarted
+            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+            renderer.drawPauseMenu()
+            return
+        }
+
         handlePlayingInput(dt)
+        if (engine !== e) return // a restart replaced the engine this frame
+        if (e.isPaused) { // just paused this frame
+            renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+            renderer.drawPauseMenu()
+            return
+        }
+
         e.update(dt)
         if (e.isGameOver) {
             if (!scoreSubmitted) {
@@ -99,6 +123,19 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             screen = Screen.GAME_OVER
         }
         renderer.drawGame(e.state, showTouch = touchUi, botPlaying = botPlaying)
+    }
+
+    private fun handlePauseMenu(e: TetrisEngine) {
+        if (kbJust(Keys.P) || kbJust(Keys.ESCAPE)) { e.applyAction(Action.PAUSE); return } // resume
+        if (kbJust(Keys.R)) { startGame(); return }
+        if (kbJust(Keys.M)) { screen = Screen.MENU; return }
+        tap()?.let { v ->
+            when {
+                hit(TouchControls.pauseResume, v) -> e.applyAction(Action.PAUSE)
+                hit(TouchControls.pauseRestart, v) -> startGame()
+                hit(TouchControls.pauseMainMenu, v) -> screen = Screen.MENU
+            }
+        }
     }
 
     private fun renderGameOver() {
@@ -130,8 +167,8 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
     private fun handlePlayingInput(dt: Float) {
         val e = engine ?: return
 
+        if (kbJust(Keys.P) || kbJust(Keys.ESCAPE)) { e.applyAction(Action.PAUSE); return }
         if (kbJust(Keys.B)) botPlaying = !botPlaying
-        if (kbJust(Keys.P)) e.applyAction(Action.PAUSE)
         if (kbJust(Keys.R)) { startGame(); return }
 
         if (botPlaying) {
@@ -144,12 +181,12 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         }
 
         var dir = 0
-        if (kb(Keys.LEFT) || kb(Keys.A)) dir -= 1
-        if (kb(Keys.RIGHT) || kb(Keys.D)) dir += 1
+        if (kb(Keys.A)) dir -= 1
+        if (kb(Keys.D)) dir += 1
         var soft = kb(Keys.DOWN) || kb(Keys.S)
-        var rotCW = kbJust(Keys.UP) || kbJust(Keys.X)
-        val rotCCW = kbJust(Keys.Z) || kbJust(Keys.CONTROL_LEFT)
-        var hard = kbJust(Keys.SPACE)
+        var rotCW = kbJust(Keys.RIGHT) || kbJust(Keys.E)
+        val rotCCW = kbJust(Keys.LEFT) || kbJust(Keys.Q)
+        var hard = kbJust(Keys.UP) || kbJust(Keys.SPACE) || kbJust(Keys.W)
         var hold = kbJust(Keys.C) || kbJust(Keys.SHIFT_LEFT)
 
         if (touchUi) {
