@@ -9,17 +9,26 @@ data class TouchButton(val action: Action, val rect: Rectangle, val label: Strin
 /** Fixed on-screen control layout (virtual coordinates, y-up) shared by the renderer and input. */
 object TouchControls {
 
+    // 3x2 grid mirroring the keyboard: top row = Q/W/E (rotate-L, hard-drop, rotate-R),
+    // bottom row = A/S/D (move-L, soft-drop, move-R).
     val gameplay: List<TouchButton> = listOf(
-        button(Action.LEFT, 0, "<", repeat = true),
-        button(Action.RIGHT, 1, ">", repeat = true),
-        button(Action.ROTATE_CW, 2, "ROT", repeat = false),
-        button(Action.SOFT_DROP, 3, "DOWN", repeat = true),
-        button(Action.HARD_DROP, 4, "DROP", repeat = false),
-        button(Action.HOLD, 5, "HOLD", repeat = false),
+        grid(Action.ROTATE_CCW, col = 0, row = 1, label = "ROT L", repeat = false),
+        grid(Action.HARD_DROP, col = 1, row = 1, label = "DROP", repeat = false),
+        grid(Action.ROTATE_CW, col = 2, row = 1, label = "ROT R", repeat = false),
+        grid(Action.LEFT, col = 0, row = 0, label = "LEFT", repeat = true),
+        grid(Action.SOFT_DROP, col = 1, row = 0, label = "SOFT", repeat = true),
+        grid(Action.RIGHT, col = 2, row = 0, label = "RIGHT", repeat = true),
     )
 
-    private fun button(action: Action, slot: Int, label: String, repeat: Boolean) =
-        TouchButton(action, Rectangle(3f + slot * 80f, 25f, 74f, 95f), label, repeat)
+    private fun grid(action: Action, col: Int, row: Int, label: String, repeat: Boolean): TouchButton {
+        val x = 6f + col * 158f
+        val y = if (row == 0) 8f else 80f
+        return TouchButton(action, Rectangle(x, y, 152f, 66f), label, repeat)
+    }
+
+    // Hold button on the left column; pause button on the right column (touch play only).
+    val gameHold = Rectangle(6f, 300f, 76f, 46f)
+    val gamePause = Rectangle(398f, 240f, 76f, 46f)
 
     // Menu screen.
     val menuLevelDown = Rectangle(110f, 430f, 56f, 56f)

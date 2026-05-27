@@ -168,6 +168,9 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         val e = engine ?: return
 
         if (kbJust(Keys.P) || kbJust(Keys.ESCAPE)) { e.applyAction(Action.PAUSE); return }
+        if (touchUi) {
+            tap()?.let { v -> if (hit(TouchControls.gamePause, v)) { e.applyAction(Action.PAUSE); return } }
+        }
         if (kbJust(Keys.B)) botPlaying = !botPlaying
         if (kbJust(Keys.R)) { startGame(); return }
 
@@ -185,7 +188,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
         if (kb(Keys.D)) dir += 1
         var soft = kb(Keys.DOWN) || kb(Keys.S)
         var rotCW = kbJust(Keys.RIGHT) || kbJust(Keys.E)
-        val rotCCW = kbJust(Keys.LEFT) || kbJust(Keys.Q)
+        var rotCCW = kbJust(Keys.LEFT) || kbJust(Keys.Q)
         var hard = kbJust(Keys.UP) || kbJust(Keys.SPACE) || kbJust(Keys.W)
         var hold = kbJust(Keys.C) || kbJust(Keys.SHIFT_LEFT)
 
@@ -197,11 +200,12 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
             tappedButton()?.let { b ->
                 when (b.action) {
                     Action.ROTATE_CW -> rotCW = true
+                    Action.ROTATE_CCW -> rotCCW = true
                     Action.HARD_DROP -> hard = true
-                    Action.HOLD -> hold = true
                     else -> {}
                 }
             }
+            tap()?.let { v -> if (hit(TouchControls.gameHold, v)) hold = true }
         }
 
         horizontalRepeat(dir, dt)
