@@ -100,15 +100,14 @@ class Renderer {
         text("HOLD", 12f, 712f, 1f, Constants.TEXT_DIM)
         text("NEXT", 396f, 712f, 1f, Constants.TEXT_DIM)
         if (botPlaying) text("BOT", 396f, 792f, 1.1f, Constants.ACCENT)
-        if (state.paused) centered("PAUSED", Constants.VIRTUAL_WIDTH / 2f, 450f, 2f, Constants.TEXT)
 
         if (showTouch) {
             TouchControls.gameplay.forEach { b ->
                 centered(b.label, b.rect.x + b.rect.width / 2f, b.rect.y + b.rect.height / 2f, 0.9f, Constants.TEXT)
             }
         } else {
-            text("Arrows move  Z/Up rotate  Space drop  C hold  P pause  B bot  R restart",
-                10f, 36f, 0.7f, Constants.TEXT_DIM)
+            text("A/D move   Left/Right rotate   Up drop   Down soft   C hold   P pause   B bot   R restart",
+                10f, 36f, 0.62f, Constants.TEXT_DIM)
         }
         batch.end()
     }
@@ -123,19 +122,76 @@ class Renderer {
         panel(TouchControls.menuLevelUp)
         panel(TouchControls.menuToggle)
         accentPanel(TouchControls.menuStart)
+        panel(TouchControls.menuControls)
         shape.end()
 
         batch.begin()
         centered("ARATETRIS", Constants.VIRTUAL_WIDTH / 2f, 700f, 2.4f, Constants.ACCENT)
-        centered("START LEVEL", Constants.VIRTUAL_WIDTH / 2f, 540f, 1.1f, Constants.TEXT_DIM)
+        centered("Best: $best", Constants.VIRTUAL_WIDTH / 2f, 632f, 1f, Constants.TEXT_DIM)
+        centered("START LEVEL", Constants.VIRTUAL_WIDTH / 2f, 548f, 1.1f, Constants.TEXT_DIM)
         centered("${menu.startLevel}", Constants.VIRTUAL_WIDTH / 2f, 458f, 2f, Constants.TEXT)
         centered("-", center(TouchControls.menuLevelDown).first, center(TouchControls.menuLevelDown).second, 2f, Constants.TEXT)
         centered("+", center(TouchControls.menuLevelUp).first, center(TouchControls.menuLevelUp).second, 2f, Constants.TEXT)
         centered(if (menu.levelProgression) "LEVEL UP: ON" else "LEVEL UP: OFF",
             center(TouchControls.menuToggle).first, center(TouchControls.menuToggle).second, 1f, Constants.TEXT)
         centered("START", center(TouchControls.menuStart).first, center(TouchControls.menuStart).second, 1.2f, Constants.TEXT)
-        centered("Best: $best", Constants.VIRTUAL_WIDTH / 2f, 170f, 1f, Constants.TEXT_DIM)
-        centered("Tap buttons, or use Left/Right, T, Space", Constants.VIRTUAL_WIDTH / 2f, 120f, 0.75f, Constants.TEXT_DIM)
+        centered("CONTROLS", center(TouchControls.menuControls).first, center(TouchControls.menuControls).second, 1f, Constants.TEXT)
+        centered("Left/Right level   T level-up   Space start   C controls", Constants.VIRTUAL_WIDTH / 2f, 120f, 0.7f, Constants.TEXT_DIM)
+        batch.end()
+    }
+
+    // ------------------------------------------------------------------ pause menu
+
+    fun drawPauseMenu() {
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.color = Constants.OVERLAY
+        shape.rect(0f, 0f, Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
+        accentPanel(TouchControls.pauseResume)
+        panel(TouchControls.pauseRestart)
+        panel(TouchControls.pauseMainMenu)
+        shape.end()
+
+        batch.begin()
+        centered("PAUSED", Constants.VIRTUAL_WIDTH / 2f, 600f, 2.2f, Constants.TEXT)
+        centered("RESUME", center(TouchControls.pauseResume).first, center(TouchControls.pauseResume).second, 1.2f, Constants.TEXT)
+        centered("RESTART", center(TouchControls.pauseRestart).first, center(TouchControls.pauseRestart).second, 1.1f, Constants.TEXT)
+        centered("MAIN MENU", center(TouchControls.pauseMainMenu).first, center(TouchControls.pauseMainMenu).second, 1.1f, Constants.TEXT)
+        centered("P/Esc resume   R restart   M main menu", Constants.VIRTUAL_WIDTH / 2f, 200f, 0.75f, Constants.TEXT_DIM)
+        batch.end()
+    }
+
+    // ------------------------------------------------------------------ controls page
+
+    fun drawControls() {
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        shape.color = Constants.BACKGROUND
+        shape.rect(0f, 0f, Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
+        accentPanel(TouchControls.controlsBack)
+        shape.end()
+
+        batch.begin()
+        centered("CONTROLS", Constants.VIRTUAL_WIDTH / 2f, 740f, 2f, Constants.ACCENT)
+        val rows = listOf(
+            "Move" to "A / D",
+            "Rotate left" to "Left  (or Q)",
+            "Rotate right" to "Right  (or E)",
+            "Soft drop" to "Down  (or S)",
+            "Hard drop" to "Up  (or Space / W)",
+            "Hold" to "C  (or Shift)",
+            "Pause menu" to "P  (or Esc)",
+            "Bot on/off" to "B",
+            "Restart" to "R",
+        )
+        var y = 660f
+        for ((label, keys) in rows) {
+            text(label, 60f, y, 0.95f, Constants.TEXT_DIM)
+            text(keys, 230f, y, 0.95f, Constants.TEXT)
+            y -= 40f
+        }
+        text("Touch: on-screen buttons (Android)", 60f, y - 6f, 0.85f, Constants.TEXT_DIM)
+        text("Reset high scores: Del, on the game-over screen", 60f, y - 42f, 0.85f, Constants.TEXT_DIM)
+        centered("BACK", center(TouchControls.controlsBack).first, center(TouchControls.controlsBack).second, 1.1f, Constants.TEXT)
+        centered("press any key or tap to return", Constants.VIRTUAL_WIDTH / 2f, 40f, 0.7f, Constants.TEXT_DIM)
         batch.end()
     }
 

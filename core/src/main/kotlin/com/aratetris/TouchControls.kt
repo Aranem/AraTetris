@@ -25,7 +25,16 @@ object TouchControls {
     val menuLevelDown = Rectangle(110f, 430f, 56f, 56f)
     val menuLevelUp = Rectangle(314f, 430f, 56f, 56f)
     val menuToggle = Rectangle(140f, 330f, 200f, 56f)
-    val menuStart = Rectangle(140f, 220f, 200f, 64f)
+    val menuStart = Rectangle(140f, 242f, 200f, 60f)
+    val menuControls = Rectangle(140f, 170f, 200f, 50f)
+
+    // Controls page.
+    val controlsBack = Rectangle(140f, 70f, 200f, 52f)
+
+    // Pause menu.
+    val pauseResume = Rectangle(140f, 440f, 200f, 56f)
+    val pauseRestart = Rectangle(140f, 360f, 200f, 56f)
+    val pauseMainMenu = Rectangle(140f, 280f, 200f, 56f)
 
     // Game-over screen.
     val gameOverRestart = Rectangle(140f, 250f, 200f, 58f)
