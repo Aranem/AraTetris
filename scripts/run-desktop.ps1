@@ -13,8 +13,8 @@
   Path to a JDK 17+ to run with. Defaults to Android Studio's bundled JBR.
 
 .EXAMPLE
-  .\run-desktop.ps1            # run (building first only if needed)
-  .\run-desktop.ps1 -Rebuild   # rebuild, then run
+  .\scripts\run-desktop.ps1            # run (building first only if needed)
+  .\scripts\run-desktop.ps1 -Rebuild   # rebuild, then run
 #>
 [CmdletBinding()]
 param(
@@ -23,18 +23,23 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-Set-Location $PSScriptRoot
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
+Set-Location $RepoRoot
 
 $java = Join-Path $JavaHome 'bin\java.exe'
 if (-not (Test-Path $java)) {
     Write-Error "java.exe not found under '$JavaHome'. Install Android Studio, or pass -JavaHome <path to a JDK 17+>."
 }
 
-$jar = Join-Path $PSScriptRoot 'lwjgl3\build\libs\AraTetris.jar'
-if ($Rebuild -or -not (Test-Path $jar)) {
+# Prefer the collected artifact in dist/; fall back to gradle's per-module output
+# (so direct `gradlew lwjgl3:dist` invocations still work).
+$jarDist  = Join-Path $RepoRoot 'dist\AraTetris.jar'
+$jarBuild = Join-Path $RepoRoot 'lwjgl3\build\libs\AraTetris.jar'
+if ($Rebuild -or -not ((Test-Path $jarDist) -or (Test-Path $jarBuild))) {
     & "$PSScriptRoot\build.ps1" desktop -JavaHome $JavaHome
     if ($LASTEXITCODE -ne 0) { Write-Error "Build failed." }
 }
+$jar = if (Test-Path $jarDist) { $jarDist } else { $jarBuild }
 
 Write-Host "Launching AraTetris (close the window to return)..." -ForegroundColor Cyan
 & $java -jar $jar

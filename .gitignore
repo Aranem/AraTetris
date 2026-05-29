@@ -3,6 +3,7 @@
 build/
 **/build/
 out/
+dist/
 
 # Local machine config (Android SDK path etc.)
 local.properties

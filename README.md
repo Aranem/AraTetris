@@ -14,23 +14,38 @@ no network, accounts, ads, or telemetry.
 - No Gradle install needed — the included `gradlew` wrapper handles it.
 
 > Commands below use Windows PowerShell. If scripts are blocked, run them as
-> `powershell -ExecutionPolicy Bypass -File .\build.ps1`.
+> `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`.
 
 ## Quick start (helper scripts)
 
-Three PowerShell scripts wrap the build into a single step each, selecting a suitable JDK
-automatically:
+Three PowerShell scripts in `scripts/` wrap the build into a single step each, selecting a suitable
+JDK automatically:
 
 ```powershell
-.\build.ps1            # build everything: the Windows jar AND the Android APK
-.\run-desktop.ps1      # build (if needed) and play on Windows
-.\deploy-android.ps1   # build, install on a USB-connected phone, and launch it
+.\scripts\build.ps1            # build everything: the Windows jar AND the Android APK
+.\scripts\run-desktop.ps1      # build (if needed) and play on Windows
+.\scripts\deploy-android.ps1   # build, install on a USB-connected phone, and launch it
 ```
 
-Useful flags: `.\build.ps1 desktop` / `.\build.ps1 android` build just one target;
-`.\deploy-android.ps1 -NoBuild` installs the existing APK without rebuilding. `deploy-android.ps1`
-needs **USB debugging** enabled on the phone (accept the on-screen prompt), and retries once if the
-USB link drops mid-install.
+Useful flags: `.\scripts\build.ps1 desktop` / `.\scripts\build.ps1 android` build just one target;
+`.\scripts\deploy-android.ps1 -NoBuild` installs the existing APK without rebuilding.
+`deploy-android.ps1` needs **USB debugging** enabled on the phone (accept the on-screen prompt), and
+retries once if the USB link drops mid-install.
+
+Final artifacts are collected into `dist/` for a single predictable location:
+`dist\AraTetris.jar` and `dist\AraTetris-debug.apk`. (Gradle still writes its originals under each
+subproject's `build/` — `dist/` is just a copy.)
+
+To hand the game to someone who **doesn't have Java installed**, run:
+
+```powershell
+.\scripts\package-windows.ps1
+```
+
+This uses `jpackage` (from a real JDK 14+; defaults to Microsoft OpenJDK 25 at
+`C:\Program Files\Microsoft\jdk-25.0.3.9-hotspot` — pass `-JpackageJdk <path>` to point elsewhere)
+to bundle the jar with a stripped-down JRE and produces `dist\AraTetris-windows.zip` (~60 MB). The
+recipient unzips and double-clicks `AraTetris\AraTetris.exe`.
 
 The rest of this section shows the underlying Gradle commands if you prefer them.
 
@@ -46,7 +61,8 @@ Or build a standalone jar:
 
 ```powershell
 .\gradlew.bat lwjgl3:dist
-# -> lwjgl3\build\libs\AraTetris.jar   (run with .\run-desktop.ps1, or java -jar using a JDK 17+)
+# -> lwjgl3\build\libs\AraTetris.jar   (the helper scripts also copy this to dist\AraTetris.jar;
+#                                       run with .\scripts\run-desktop.ps1, or java -jar using a JDK 17+)
 ```
 
 ## Build & run on Android

@@ -18,8 +18,8 @@
   Path to a JDK 17+ to build with. Defaults to Android Studio's bundled JBR.
 
 .EXAMPLE
-  .\deploy-android.ps1            # build, install, launch
-  .\deploy-android.ps1 -NoBuild   # install the existing APK and launch
+  .\scripts\deploy-android.ps1            # build, install, launch
+  .\scripts\deploy-android.ps1 -NoBuild   # install the existing APK and launch
 #>
 [CmdletBinding()]
 param(
@@ -29,9 +29,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-Set-Location $PSScriptRoot
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
+Set-Location $RepoRoot
 
-$apk = Join-Path $PSScriptRoot 'android\build\outputs\apk\debug\android-debug.apk'
+# Prefer the collected artifact in dist/; fall back to gradle's per-module output.
+$apkDist  = Join-Path $RepoRoot 'dist\AraTetris-debug.apk'
+$apkBuild = Join-Path $RepoRoot 'android\build\outputs\apk\debug\android-debug.apk'
 $adb = Join-Path $env:LOCALAPPDATA 'Android\Sdk\platform-tools\adb.exe'
 $appId = 'com.aratetris'
 $launcher = 'com.aratetris/com.aratetris.android.AndroidLauncher'
@@ -44,8 +47,9 @@ if (-not $NoBuild) {
     & "$PSScriptRoot\build.ps1" android -JavaHome $JavaHome
     if ($LASTEXITCODE -ne 0) { Write-Error "Build failed." }
 }
+$apk = if (Test-Path $apkDist) { $apkDist } else { $apkBuild }
 if (-not (Test-Path $apk)) {
-    Write-Error "APK not found at '$apk'. Run without -NoBuild to build it first."
+    Write-Error "APK not found in dist\ or android\build\outputs\apk\debug\. Run without -NoBuild to build it first."
 }
 
 # Confirm an authorized device is attached before we try to install.
