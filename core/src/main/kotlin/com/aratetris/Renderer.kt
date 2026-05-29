@@ -190,6 +190,7 @@ class Renderer {
         centered("CONTROLS", center(TouchControls.menuControls).first, center(TouchControls.menuControls).second, 1f, Constants.TEXT)
         centered("Left/Right level   T level-up   V swipe   Space start   C controls",
             Constants.VIRTUAL_WIDTH / 2f, 122f, 0.65f, Constants.TEXT_DIM)
+        if (menu.isEggActive()) centered("Mewwo hugbug <3", Constants.VIRTUAL_WIDTH / 2f, 660f, 1.3f, EGG_COLOR)
         batch.end()
     }
 
@@ -346,5 +347,6 @@ class Renderer {
         const val ALPHA_CUTOFF = 0x80
         // Extra horizontal advance added to every glyph, in unscaled font units (scales with text).
         const val LETTER_SPACING = 1
+        val EGG_COLOR = Color(0.55f, 0.82f, 1f, 1f)
     }
 }

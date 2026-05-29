@@ -31,6 +31,7 @@ object TouchControls {
     val gamePause = Rectangle(398f, 746f, 76f, 46f)
 
     // Menu screen.
+    val menuTitle = Rectangle(120f, 670f, 240f, 60f)
     val menuLevelDown = Rectangle(110f, 446f, 56f, 56f)
     val menuLevelUp = Rectangle(314f, 446f, 56f, 56f)
     val menuToggle = Rectangle(120f, 374f, 240f, 50f)
