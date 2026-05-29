@@ -89,6 +89,7 @@ class TetrisGame(providedAgent: TetrisAgent? = null) : ApplicationAdapter() {
 
         tap()?.let { v ->
             when {
+                hit(TouchControls.menuTitle, v) -> menu.tapLogo()
                 hit(TouchControls.menuLevelDown, v) -> menu.levelDown()
                 hit(TouchControls.menuLevelUp, v) -> menu.levelUp()
                 hit(TouchControls.menuToggle, v) -> menu.toggleProgression()
